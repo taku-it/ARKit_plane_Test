@@ -16,35 +16,42 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // Set the view's delegate
         sceneView.delegate = self
         
-        // Show statistics such as fps and timing information
-        sceneView.showsStatistics = true
-        
-        // Create a new scene
-        let scene = SCNScene(named: "art.scnassets/ship.scn")!
-        
-        // Set the scene to the view
-        sceneView.scene = scene
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        
-        // Create a session configuration
+        sceneView.scene = SCNScene()
+        sceneView.debugOptions = [SCNDebugOptions.showFeaturePoints]
         let configuration = ARWorldTrackingConfiguration()
-
-        // Run the view's session
+        configuration.planeDetection = .horizontal
         sceneView.session.run(configuration)
+       
     }
     
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
+    func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
+        guard let planeAnchor = anchor as? ARPlaneAnchor else{fatalError()}
+    
+        let planeNode = SCNNode()
+        let geometry = SCNPlane(width: CGFloat(planeAnchor.extent.x), height: CGFloat(planeAnchor.extent.z))
+        geometry.materials.first?.diffuse.contents = UIColor.white.withAlphaComponent(0.5)
         
-        // Pause the view's session
-        sceneView.session.pause()
+        planeNode.geometry = geometry
+        planeNode.transform = SCNMatrix4MakeRotation(-Float.pi / 2.0, 1, 0, 0)
+        node.addChildNode(planeNode)
+        
+        // 平面が更新されたときに呼ばれる
+        func renderer(_ renderer: SCNSceneRenderer, didUpdate node:
+        SCNNode, for anchor: ARAnchor) {
+        guard let planeAnchor = anchor as? ARPlaneAnchor else
+        {fatalError()}
+        guard let geometryPlaneNode = node.childNodes.first,
+        let planeGeometory = geometryPlaneNode.geometry as? SCNPlane else {fatalError()}
+        // ジオメトリをアップデートする
+            planeGeometory.width = CGFloat(planeAnchor.extent.x)
+            planeGeometory.height = CGFloat(planeAnchor.extent.z)
+            geometryPlaneNode.simdPosition = float3(planeAnchor.center.x, 0,planeAnchor.center.z) }
     }
+    
+    
+    
 
     // MARK: - ARSCNViewDelegate
     
